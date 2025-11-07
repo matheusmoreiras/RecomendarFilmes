@@ -1,5 +1,11 @@
 import streamlit as st
-from utils.utils import setup_page, load_css, get_auth, remover_favorito, carregar_favoritos
+from utils.utils import (
+    setup_page,
+    load_css,
+    remover_favorito,
+    carregar_favoritos,
+    card_filme
+)
 
 setup_page(titulo="Meus Favoritos", protegida=True, layout="wide")
 load_css(['styles/geral.css', 'styles/components.css', 'styles/badges.css'])
@@ -39,27 +45,4 @@ if favoritos is not None:
                                  type="primary"):
                         remover_favorito(filme['tmdb_id'])
 
-                    if filme.get("poster_path"):
-                        st.image(f"{IMAGEM_URL}{filme['poster_path']}")
-
-                    st.markdown(
-                        f'<div class="movie-title">{filme["titulo"]}</div>',
-                        unsafe_allow_html=True)
-
-                    if filme['generos']:
-                        st.markdown(
-                            f'<span class="genero-badge">🎭 {filme["generos"]}</span>',
-                            unsafe_allow_html=True)
-
-                    nota = filme.get('media_votos', 0)
-                    classe_nota = "nota-alta" if nota >= 8 else "nota-media" if nota >= 6 else "nota-baixa"
-                    st.markdown(
-                        f"<span class='votos-badge {classe_nota}'>⭐ {nota:.1f}/10</span>"
-                        f"<span class='vote-count'>({filme.get('qtd_votos', 0):,} votos)</span>",
-                        unsafe_allow_html=True
-                    )
-
-                    with st.expander("Ver sinopse"):
-                        sinopse = filme.get('sinopse')
-                        st.write(
-                            sinopse if sinopse else "Sinopse não disponível")
+                    card_filme(filme)

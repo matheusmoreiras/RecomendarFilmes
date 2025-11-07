@@ -19,7 +19,6 @@ def cadastrar_usuario(user_data):
         return 500, {"success": False, "message": f"Erro de conexão: {e}"}
 
 
-# Função principal
 def main():
     if "cadastro_ok" not in st.session_state:
         st.session_state["cadastro_ok"] = False

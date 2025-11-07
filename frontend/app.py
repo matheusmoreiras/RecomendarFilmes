@@ -11,11 +11,11 @@ setup_page(titulo="RotaCine Login", hide_sidebar=True)
 load_css(["styles/components.css", "styles/geral.css"])
 
 
-# Função para checar o login
+# Checar o login
 def check_login(username, password):
     payload = {'username': username, "password": password}
     try:
-        response = requests.post(URL_LOGIN, json=payload)
+        response = requests.post(URL_LOGIN, json=payload, timeout=15)
         if response.status_code == 401:
             return {"success": False,
                     "message": "Senha ou usuário incorreto"}
@@ -23,12 +23,21 @@ def check_login(username, password):
             return response.json()
         else:
             return {"success": False,
-                    "message": "Erro de conexão com o servidor"}
+                    "message": f"Erro de conexão com o servidor, cód:{response.status_code}"}
+    except requests.exceptions.ConnectionError:
+        return {"success": False,
+                "message": "ERRO: Verifique se o backend/API está ativo"}
+
+    except requests.exceptions.Timeout:
+        return {"success": False,
+                "message": "O servidor demorou muito para responder"}
+
     except requests.exceptions.RequestException as e:
-        return {"success": False, "message": f"Erro de conexão: {e}"}
+        print(f"Erro inesperado de request: {e}")
+        return {"success": False,
+                "message": "Ocorreu um erro inesperado"}
 
 
-# Função principal
 def main():
     # Verificar se já está logado
     if is_logged_in():
@@ -43,7 +52,6 @@ def main():
     col1, col2 = st.columns([2, 1], gap="large")
 
     with col1:
-        # Container para o formulário
         with st.container():
             with st.form("login_form"):
                 st.markdown("#### Acesse sua conta")
@@ -89,6 +97,5 @@ def main():
                 st.switch_page("pages/cadastro.py")
 
 
-# Execução da função principal (main)
 if __name__ == "__main__":
     main()

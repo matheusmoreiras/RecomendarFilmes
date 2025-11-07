@@ -8,7 +8,6 @@ API_URL = "http://127.0.0.1:5000"
 URL_RESET = f"{API_URL}/reset_senha"
 
 
-# Solicita o reset
 def solicitar_reset(email: str):
     try:
         response = requests.post(URL_RESET, json={"email": email}, timeout=10)
@@ -17,18 +16,15 @@ def solicitar_reset(email: str):
         return 500, {"success": False, "message": f"Erro de conexão: {e}"}
 
 
-# Título
 st.markdown('<h1 class="titulo">Recupere sua senha</h1>',
             unsafe_allow_html=True)
 st.markdown('<p class="subtitulo">Informe seu email para recuperação</p>',
             unsafe_allow_html=True)
 
-# Criação do formulário
 with st.form("reset_form"):
     email = st.text_input("Email", placeholder="Digite seu email")
     submitted = st.form_submit_button("Enviar", width='stretch')
 
-    # Faz a requisição
     if submitted:
         if not email or not validar_email(email):
             st.error("Digite um email válido!")
@@ -40,6 +36,5 @@ with st.form("reset_form"):
             else:
                 st.error(f"Erro: {resp.get('message','Falha ao solicitar redefinição')}")
 
-# Voltar ao login
 if st.button("Voltar para Login", width='stretch'):
     st.switch_page("app.py")

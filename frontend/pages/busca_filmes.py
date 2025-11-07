@@ -1,10 +1,15 @@
 import streamlit as st
 import requests
-from utils.utils import setup_page, load_css, add_favorito, get_auth
+from utils.utils import (
+    setup_page,
+    load_css,
+    add_favorito,
+    get_auth,
+    add_list_recomendar,
+    card_filme
+)
 
 setup_page(titulo="Rotacine", layout="wide", protegida=True)
-
-# CSS Modernizado
 load_css(['styles/geral.css', 'styles/components.css', 'styles/badges.css'])
 
 # Autorização
@@ -20,7 +25,7 @@ st.markdown(
     '<p class="subtitulo">Descubra filmes com Aprendizado de Máquina!</p>',
     unsafe_allow_html=True)
 
-# Seção de pesquisa
+
 col_search, col_button, col_filtro = st.columns([5, 1.5, 2])
 
 with col_search:
@@ -65,59 +70,34 @@ if buscar or (termo_pesquisa and len(termo_pesquisa) > 2):
                     unsafe_allow_html=True
                 )
 
-                cols = st.columns(5, gap="medium")
+                cols = st.columns(4, gap="medium")
 
                 for i, filme in enumerate(resultados):
-                    col = cols[i % 5]
+                    col = cols[i % 4]
                     with col:
                         with st.container(border=True):
+                            col1, col2 = st.columns(2)
                             favoritado = filme.get("favoritos", False)
 
-                            texto_botao = "Favoritado" if favoritado else "Favoritar"
+                            with col1:
+                                texto_botao = "Favoritado" if favoritado else "Favoritar"
+                                if st.button(
+                                    texto_botao,
+                                    key=f"fav_{filme['tmdb_id']}",
+                                    use_container_width=True,
+                                    disabled=favoritado,
+                                ):
+                                    add_favorito(filme['tmdb_id'])
 
-                            if st.button(
-                                texto_botao,
-                                key=f"fav_{filme['tmdb_id']}",
-                                use_container_width=False,
-                                disabled=favoritado,
-                            ):
-                                add_favorito(filme['tmdb_id'])
+                            with col2:
+                                if st.button(
+                                 "Recomendar",
+                                 key=f"add_{filme['tmdb_id']}",
+                                 use_container_width=True,
+                                ):
+                                    add_list_recomendar(filme)
 
-                            if filme.get("poster_path"):
-                                st.image(
-                                    f"{IMAGEM_URL}{filme['poster_path']}",
-                                )
-
-                            st.markdown(
-                                f'<div class="movie-title">{filme["titulo"]}</div>',
-                                unsafe_allow_html=True
-                            )
-
-                            if filme['generos']:
-                                st.markdown(
-                                    f'<span class="genero-badge">🎭 {filme["generos"]}</span>',
-                                    unsafe_allow_html=True
-                                )
-
-                            nota = filme['media_votos']
-                            if nota >= 8:
-                                classe_nota = "nota-alta"
-                            elif nota >= 6:
-                                classe_nota = "nota-media"
-                            else:
-                                classe_nota = "nota-baixa"
-                            st.markdown(
-                                f"<span class='votos-badge {classe_nota}'>⭐ {nota:.1f}/10</span>"
-                                f"<span class='vote-count'>({filme['qtd_votos']:,} votos)</span>",
-                                unsafe_allow_html=True
-                            )
-
-                            with st.expander("Ver sinopse"):
-                                sinopse = filme.get('sinopse')
-                                if sinopse:
-                                    st.write(sinopse)
-                                else:
-                                    st.info("Sinopse não disponível")
+                            card_filme(filme)
 
             else:
                 st.warning(

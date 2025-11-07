@@ -5,6 +5,7 @@ from typing import List
 import requests
 
 API_URL = "http://127.0.0.1:5000"
+IMAGEM_URL = "https://image.tmdb.org/t/p/w500"
 
 
 def validar_senha(senha):
@@ -36,7 +37,7 @@ def get_auth():
 
 
 def logout():
-    keys_to_clear = ['access_token', 'username']
+    keys_to_clear = ['access_token', 'username', 'list_recomendacao']
     for key in keys_to_clear:
         if key in st.session_state:
             del st.session_state[key]
@@ -85,6 +86,7 @@ def setup_page(titulo: str, layout: str = "centered", protegida: bool = False, h
 
         st.sidebar.page_link("pages/busca_filmes.py", label="Buscar filmes")
         st.sidebar.page_link("pages/favoritos.py", label="Meus Favoritos")
+        st.sidebar.page_link("pages/recomendador.py", label="Recomendador")
 
         st.sidebar.divider()
 
@@ -168,3 +170,75 @@ def remover_favorito(tmdb_id):
             st.toast(f"{data.get('message')}")
     except requests.RequestException as e:
         st.error(f"Erro ao remover o filme: {e}")
+
+
+def get_list_recomendar():
+    if 'list_recomendacao' not in st.session_state:
+        st.session_state['list_recomendacao'] = []
+    return st.session_state['list_recomendacao']
+
+
+def add_list_recomendar(filme: dict):
+    """Adiciona o dict de um filme na lista
+    a partir da página de pesquisa, onde recupera o filme.
+    """
+    list_recomendacao = get_list_recomendar()
+    if not any(f['tmdb_id'] == filme['tmdb_id'] for f in list_recomendacao):
+        list_recomendacao.append(filme)
+        st.toast(f"{filme['titulo']} adicionado à lista de recomendação!")
+    else:
+        st.toast(f"{filme['titulo']} já está na lista.", icon="✅")
+
+
+def remove_list_recomendar(tmdb_id: int):
+    """Remove um filme
+    a partir da página do recomendador, onde recupera tmdb_id.
+    """
+    lista = get_list_recomendar()
+    remover_filme = next((f for f in lista if f['tmdb_id'] == tmdb_id), None)
+    if remover_filme:
+        lista.remove(remover_filme)
+        st.toast("Filme removido da lista.")
+        st.rerun()
+
+
+def limpar_lista_recomendacao():
+    st.session_state['list_recomendacao'] = []
+
+
+def card_filme(filme):
+    if filme.get("poster_path"):
+        st.image(
+            f"{IMAGEM_URL}{filme['poster_path']}",
+        )
+
+    st.markdown(
+        f'<div class="movie-title">{filme["titulo"]}</div>',
+        unsafe_allow_html=True
+    )
+
+    if filme['generos']:
+        st.markdown(
+            f'<span class="genero-badge">🎭 {filme["generos"]}</span>',
+            unsafe_allow_html=True
+        )
+
+    nota = filme['media_votos']
+    if nota >= 8:
+        classe_nota = "nota-alta"
+    elif nota >= 6:
+        classe_nota = "nota-media"
+    else:
+        classe_nota = "nota-baixa"
+    st.markdown(
+        f"<span class='votos-badge {classe_nota}'>⭐ {nota:.1f}/10</span>"
+        f"<span class='vote-count'>({filme['qtd_votos']:,} votos)</span>",
+        unsafe_allow_html=True
+    )
+
+    with st.expander("Ver sinopse"):
+        sinopse = filme.get('sinopse')
+        if sinopse:
+            st.write(sinopse)
+        else:
+            st.info("Sinopse não disponível")
