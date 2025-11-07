@@ -1,5 +1,6 @@
 import streamlit as st
 import requests
+import os
 from utils.utils import (
     setup_page,
     load_css,
@@ -14,7 +15,7 @@ setup_page(titulo="Recomendador", protegida=True, layout="wide")
 load_css(['styles/geral.css', 'styles/components.css', 'styles/badges.css'])
 
 # URLs
-API_URL = "http://127.0.0.1:5000"
+API_URL = os.environ.get("API_URL", "http://127.0.0.1:5000")
 IMAGEM_URL = "https://image.tmdb.org/t/p/w500"
 
 st.markdown('<h1 class="titulo">Recomendador</h1>',

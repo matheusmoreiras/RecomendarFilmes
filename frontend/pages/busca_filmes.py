@@ -1,5 +1,6 @@
 import streamlit as st
 import requests
+import os
 from utils.utils import (
     setup_page,
     load_css,
@@ -16,7 +17,7 @@ load_css(['styles/geral.css', 'styles/components.css', 'styles/badges.css'])
 headers = get_auth()
 
 # URLs
-API_URL = "http://127.0.0.1:5000"
+API_URL = os.environ.get("API_URL", "http://127.0.0.1:5000")
 IMAGEM_URL = "https://image.tmdb.org/t/p/w500"
 
 # Header

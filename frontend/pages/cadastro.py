@@ -1,12 +1,13 @@
 import streamlit as st
 import requests
+import os
 from utils.utils import validar_senha, validar_email, setup_page, load_css
 
 setup_page(titulo="Cadastro", hide_sidebar=True)
 load_css(["styles/geral.css", "styles/components.css"])
 
 # URLs da API
-API_URL = "http://127.0.0.1:5000"
+API_URL = os.environ.get("API_URL", "http://127.0.0.1:5000")
 URL_CADASTRO = f"{API_URL}/cadastro"
 
 

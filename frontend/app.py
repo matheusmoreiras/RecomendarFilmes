@@ -1,10 +1,11 @@
 import streamlit as st
 import requests
+import os
 from utils.utils import setup_page, load_css, is_logged_in
 
 # URLS
-URL_LOGIN = "http://127.0.0.1:5000/login"
-API_URL = "http://127.0.0.1:5000"
+API_URL = os.environ.get("API_URL", "http://127.0.0.1:5000")
+URL_LOGIN = f"{API_URL}/login"
 
 # Configuração da página
 setup_page(titulo="RotaCine Login", hide_sidebar=True)

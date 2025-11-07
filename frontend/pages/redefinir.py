@@ -1,12 +1,13 @@
 import streamlit as st
 import requests
+import os
 from time import sleep
 from utils.utils import validar_senha, setup_page, load_css
 
 setup_page(titulo="Redefinição de senha", hide_sidebar=True)
 load_css(["styles/geral.css", "styles/components.css"])
 
-API_URL = "http://127.0.0.1:5000"
+API_URL = os.environ.get("API_URL", "http://127.0.0.1:5000")
 REDEFINIR_URL = f'{API_URL}/redefinir'
 
 token = st.query_params.get("token")  # Pega o token da URL

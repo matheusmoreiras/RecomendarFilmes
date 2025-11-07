@@ -1,6 +1,15 @@
 version: '3.8'
 
 services:
+  frontend:
+    build: ./frontend
+    ports:
+      - "8501:8501"
+    environment:
+      - API_URL=http://backend:5000
+    depends_on:
+      - backend
+
   backend:
     build: ./backend
     ports:

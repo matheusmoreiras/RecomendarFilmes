@@ -14,6 +14,7 @@ venv/
 
 #docker
 postgres_data/
+docker-compose.override.yml
 
 # arquivos
 backend/populate.py

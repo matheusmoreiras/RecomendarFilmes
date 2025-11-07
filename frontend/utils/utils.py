@@ -1,10 +1,11 @@
 import streamlit as st
 import re
+import os
 from time import sleep
 from typing import List
 import requests
 
-API_URL = "http://127.0.0.1:5000"
+API_URL = os.environ.get("API_URL", "http://127.0.0.1:5000")
 IMAGEM_URL = "https://image.tmdb.org/t/p/w500"
 
 

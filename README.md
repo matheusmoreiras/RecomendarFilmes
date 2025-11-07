@@ -31,15 +31,14 @@ Siga os passos abaixo para configurar e executar localmente.
 **Pré-requisitos:**
 * Git
 * Docker Desktop instalado e em execução
-* Python 3.11+ (apenas para o frontend, em breve dockerizado)
 
-PostgreSQL não é necessário.
+Python e PostgreSQL não são necessários.
 
 ## Configuração do Backend e Docker
 
 **1. Clone o repositório**
 ```
-git clone https://github.com/matheusmoreiras/RecomendarFilmes
+$ git clone https://github.com/matheusmoreiras/RecomendarFilmes
 ```
 
 **2. Configure o .env**
@@ -56,46 +55,18 @@ Abra o arquivo .env em um editor de código. Os valores padrão do banco de dado
 
 _Para ativar e verificar senhas de app: https://support.google.com/accounts/answer/185833?hl=pt-br_
 
-**3. Inicie com Docker Compose**
-```
-$ docker-compose up --build
-
-# Docker desktop deve estar em execução.
-```
-
-## Configuração do frontend
-```
-# Navegue até a pasta do backend
-$ cd RecomendarFilmes/frontend
-
-# Crie e ative o ambiente virtual
-$ python -m venv venv
-# No windows > $ venv\Scripts\activate
-# No macOS > $ venv\bin\activate
-
-# Instale as dependências
-pip install -r requirements.txt
-```
-
 ## Execute a aplicação
 
 **Terminal 1 - Docker**
 ```
 # No terminal, navegue até a pasta RecomendarFilmes, com Docker Desktop aberto
+# --build necessário apenas na primeira execução
+$ docker-compose up --build
+
+# Para outras execuções:
 $ docker-compose up
 ```
-
-**Terminal 2 - Frontend**
-```
-# Navegue até a pasta /frontend
-# Ative o ambiente virtual
-
-# Inicie a aplicação
-
-$ streamlit run app.py
-
-# A aplicação iniciará em seu navegador.
-```
+_Após iniciar, use a URL: http://localhost:8501 no seu navegador_
 
 ### Endpoints da API
 
@@ -110,5 +81,5 @@ Endpoint	        Método	     Descrição
 /redefinir	           POST	       Redefine a senha (com token válido)
 /filmes/pesquisar      GET	       Busca filmes no banco de dados
 /favoritos             GET	       Adiciona um filme à lista de favoritos do usuário.
-/favoritos/<tmdb_id>   GET	       Remove um filme da lista de favoritos do usuário.
+/favoritos/<tmdb_id>   DELETE      Remove um filme da lista de favoritos do usuário.
 ```
