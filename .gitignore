@@ -19,6 +19,12 @@ docker-compose.override.yml
 # arquivos
 backend/populate.py
 backend/clean_db.py
+backend/migrations
+backend/backfill.py
+indices_mapeamento.pkl
+tfidf_matrix.pkl
+tfidf_vectorizer.pkl
+
 
 #testes
 .pytest_cache/
