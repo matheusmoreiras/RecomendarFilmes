@@ -10,15 +10,14 @@ Plataforma para oferecer recomendações de filmes personalizadas com aprendizad
 * **Recuperação de senhas**
 * **Busca de filmes**
 * **Sistema de favoritos**
+* **Recomendação de filmes**
 
 ### Tecnologias:
 
 **Backend**
 * Python 3.11
 * Flask
-* SQLAlchemy com PostgreSQL (via docker)
-* Werkzeug
-* Docker & Docker Compose
+* SQLAlchemy com PostgreSQL
 
 **Frontend**
 * Python 3.11
@@ -68,6 +67,12 @@ $ docker-compose up
 ```
 _Após iniciar, use a URL: http://localhost:8501 no seu navegador_
 
+### Treinamento do Modelo de Recomendaçao (ML)
+
+A aplicação utiliza um modelo de machine learning (.pkl) para calcular a similaridade entre os filmes e gerar recomendações.
+O repositório já contém um arquivo modelo_recomendacao.pkl pré-treinado, permitindo que a aplicação funcione imediatamente
+
+
 ### Endpoints da API
 
 Rotas protegidas requerem um Token JWT no cabeçalho de autorização. Rotas do Flask;
@@ -82,4 +87,5 @@ Endpoint	        Método	     Descrição
 /filmes/pesquisar      GET	       Busca filmes no banco de dados
 /favoritos             GET	       Adiciona um filme à lista de favoritos do usuário.
 /favoritos/<tmdb_id>   DELETE      Remove um filme da lista de favoritos do usuário.
+/recomendar/multiplos  POST        Recomendação baseada em conteúdo para o usuário.
 ```
