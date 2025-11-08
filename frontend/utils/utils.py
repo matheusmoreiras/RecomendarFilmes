@@ -46,7 +46,8 @@ def logout():
 
 
 # Configuração páginas Streamlit
-def setup_page(titulo: str, layout: str = "centered", protegida: bool = False, hide_sidebar: bool = False):
+def setup_page(titulo: str, layout: str = "centered",
+               protegida: bool = False, hide_sidebar: bool = False):
     """
     Args:
         titulo: titulo da pagina
@@ -243,3 +244,39 @@ def card_filme(filme):
             st.write(sinopse)
         else:
             st.info("Sinopse não disponível")
+
+
+def setup_header(titulo, subtitulo=None, emoji=""):
+    titulo_completo = f"{emoji}{titulo}" if emoji else titulo
+    st.markdown(f'<h1 class="titulo">{titulo_completo}</h1>',
+                unsafe_allow_html=True)
+    if subtitulo:
+        st.markdown(f'<p class="subtitulo">{subtitulo}</p>',
+                    unsafe_allow_html=True)
+
+
+def msg_lista_vazia(message, button="Buscar Filmes",
+                    page="pages/busca_filmes.py"):
+    st.info(message)
+    if button and page:
+        if st.button(button):
+            st.switch_page(page)
+
+
+def grid_filme(lista_filme, colunas, button=None):
+    """
+    Args:
+    lista_filme: Dict dos filmes
+    colunas: qtd de colunas do grid(ex: 4 ou 5)
+    button: Função para renderizar botões do grid
+    """
+    if not lista_filme:
+        return
+    cols = st.columns(colunas, gap="medium")
+    for i, filme in enumerate(lista_filme):
+        col = cols[i % colunas]
+        with col:
+            with st.container(border=True):
+                if button:
+                    button(filme)
+                card_filme(filme)

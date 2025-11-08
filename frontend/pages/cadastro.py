@@ -1,20 +1,23 @@
 import streamlit as st
 import requests
-import os
-from utils.utils import validar_senha, validar_email, setup_page, load_css
+from utils.utils import (
+    validar_senha,
+    validar_email,
+    setup_page,
+    load_css,
+    setup_header,
+    API_URL
+)
 
 setup_page(titulo="Cadastro", hide_sidebar=True)
 load_css(["styles/geral.css", "styles/components.css"])
-
-# URLs da API
-API_URL = os.environ.get("API_URL", "http://127.0.0.1:5000")
-URL_CADASTRO = f"{API_URL}/cadastro"
 
 
 # Função para cadastrar o usuário na API
 def cadastrar_usuario(user_data):
     try:
-        response = requests.post(URL_CADASTRO, json=user_data, timeout=10)
+        response = requests.post(f"{API_URL}/cadastro",
+                                 json=user_data, timeout=10)
         return response.status_code, response.json()
     except requests.exceptions.RequestException as e:
         return 500, {"success": False, "message": f"Erro de conexão: {e}"}
@@ -29,8 +32,7 @@ def main():
     col_back, col_title = st.columns([1, 6])
 
     with col_title:
-        st.markdown('<h1 class="titulo">Criar Conta</h1>',
-                    unsafe_allow_html=True)
+        setup_header("Criar Conta")
 
     with col_back:
         if st.button("← Voltar", help="Voltar para o login", width="content"):
@@ -188,7 +190,7 @@ def main():
 
         with col_help1:
             st.markdown("""
-            ** Dicas para criar sua conta:**
+            **Dicas para criar sua conta:**
 
             • **Nome de usuário:** Único, usado para login\n
             • **Senha forte:** Mínimo 6 caracteres (letras + números)\n
@@ -198,7 +200,7 @@ def main():
 
         with col_help2:
             st.markdown("""
-            ** Problemas comuns:**
+            **Problemas comuns:**
 
             • Usuário existe → Tente outro nome\n
             • Email inválido → Use formato válido\n

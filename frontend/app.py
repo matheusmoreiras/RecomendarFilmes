@@ -1,11 +1,12 @@
 import streamlit as st
 import requests
-import os
-from utils.utils import setup_page, load_css, is_logged_in
-
-# URLS
-API_URL = os.environ.get("API_URL", "http://127.0.0.1:5000")
-URL_LOGIN = f"{API_URL}/login"
+from utils.utils import (
+    setup_page,
+    load_css,
+    is_logged_in,
+    setup_header,
+    API_URL
+)
 
 # Configuração da página
 setup_page(titulo="RotaCine Login", hide_sidebar=True)
@@ -16,7 +17,7 @@ load_css(["styles/components.css", "styles/geral.css"])
 def check_login(username, password):
     payload = {'username': username, "password": password}
     try:
-        response = requests.post(URL_LOGIN, json=payload, timeout=15)
+        response = requests.post(f"{API_URL}/login", json=payload, timeout=15)
         if response.status_code == 401:
             return {"success": False,
                     "message": "Senha ou usuário incorreto"}
@@ -24,7 +25,7 @@ def check_login(username, password):
             return response.json()
         else:
             return {"success": False,
-                    "message": f"Erro de conexão com o servidor, cód:{response.status_code}"}
+                    "message": f"Erro de conexão, cód:{response.status_code}"}
     except requests.exceptions.ConnectionError:
         return {"success": False,
                 "message": "ERRO: Verifique se o backend/API está ativo"}
@@ -45,8 +46,7 @@ def main():
         st.switch_page("pages/busca_filmes.py")
 
     # Interface de Login
-    st.markdown('<h1 class="titulo">🎬 RotaCine</h1>', unsafe_allow_html=True)
-    st.markdown("### Faça seu login para continuar")
+    setup_header("RotaCine", "Faça seu login para continuar", "🎬 ")
     st.markdown("Descubra novos filmes personalizados para você!")
 
     # Colunas do front end

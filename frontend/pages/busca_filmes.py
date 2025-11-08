@@ -1,31 +1,45 @@
 import streamlit as st
 import requests
-import os
 from utils.utils import (
     setup_page,
     load_css,
     add_favorito,
     get_auth,
     add_list_recomendar,
-    card_filme
+    setup_header,
+    grid_filme,
+    API_URL
 )
 
 setup_page(titulo="Rotacine", layout="wide", protegida=True)
 load_css(['styles/geral.css', 'styles/components.css', 'styles/badges.css'])
+setup_header("RotaCine", "Descubra filmes com Aprendizado de Máquina!", "🎬 ")
 
-# Autorização
+
+def fav_recomendar_button(filme):
+    col1, col2 = st.columns(2)
+    favoritado = filme.get("favoritos", False)
+
+    with col1:
+        texto_botao = "Favoritado" if favoritado else "Favoritar"
+        if st.button(
+            texto_botao,
+            key=f"fav_{filme['tmdb_id']}",
+            use_container_width=True,
+            disabled=favoritado,
+        ):
+            add_favorito(filme['tmdb_id'])
+
+    with col2:
+        if st.button(
+            "Recomendar",
+            key=f"add_{filme['tmdb_id']}",
+            use_container_width=True,
+        ):
+            add_list_recomendar(filme)
+
+
 headers = get_auth()
-
-# URLs
-API_URL = os.environ.get("API_URL", "http://127.0.0.1:5000")
-IMAGEM_URL = "https://image.tmdb.org/t/p/w500"
-
-# Header
-st.markdown('<h1 class="titulo">🎬 RotaCine</h1>', unsafe_allow_html=True)
-st.markdown(
-    '<p class="subtitulo">Descubra filmes com Aprendizado de Máquina!</p>',
-    unsafe_allow_html=True)
-
 
 col_search, col_button, col_filtro = st.columns([5, 1.5, 2])
 
@@ -71,34 +85,7 @@ if buscar or (termo_pesquisa and len(termo_pesquisa) > 2):
                     unsafe_allow_html=True
                 )
 
-                cols = st.columns(4, gap="medium")
-
-                for i, filme in enumerate(resultados):
-                    col = cols[i % 4]
-                    with col:
-                        with st.container(border=True):
-                            col1, col2 = st.columns(2)
-                            favoritado = filme.get("favoritos", False)
-
-                            with col1:
-                                texto_botao = "Favoritado" if favoritado else "Favoritar"
-                                if st.button(
-                                    texto_botao,
-                                    key=f"fav_{filme['tmdb_id']}",
-                                    use_container_width=True,
-                                    disabled=favoritado,
-                                ):
-                                    add_favorito(filme['tmdb_id'])
-
-                            with col2:
-                                if st.button(
-                                 "Recomendar",
-                                 key=f"add_{filme['tmdb_id']}",
-                                 use_container_width=True,
-                                ):
-                                    add_list_recomendar(filme)
-
-                            card_filme(filme)
+                grid_filme(resultados, 4, fav_recomendar_button)
 
             else:
                 st.warning(
