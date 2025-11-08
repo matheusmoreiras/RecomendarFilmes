@@ -26,6 +26,9 @@ class Filmes(db.Model):
     qtd_votos = db.Column(db.Integer, nullable=True)
     poster_path = db.Column(db.String(255), nullable=True)
     generos = db.Column(db.String(255), nullable=True)
+    elenco = db.Column(db.Text, nullable=True)
+    diretor = db.Column(db.String(255), nullable=True)
+    keywords = db.Column(db.Text, nullable=True)
 
     def __repr__(self):
         return f'<Filme {self.titulo}>'

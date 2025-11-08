@@ -1,5 +1,11 @@
 from flask import Flask, jsonify, request
-from flask_jwt_extended import create_access_token, jwt_required, get_jwt_identity, JWTManager, decode_token
+from flask_jwt_extended import (
+    create_access_token,
+    jwt_required,
+    get_jwt_identity,
+    JWTManager,
+    decode_token
+)
 from jwt.exceptions import ExpiredSignatureError, DecodeError
 from werkzeug.security import generate_password_hash, check_password_hash
 import smtplib
@@ -11,6 +17,17 @@ from dotenv import load_dotenv
 from database import db
 from models import Usuario, Filmes, Favoritos
 from pathlib import Path
+from collections import defaultdict
+from sklearn.metrics.pairwise import cosine_similarity
+import joblib
+
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+model_embedding = os.path.join(BASE_DIR, 'modelo_recomendacao.pkl')
+model = joblib.load(model_embedding)
+embeddings = model['embeddings']
+tmdb_ids = model['tmdb_ids']
+indices_map = {tmdb_id: i for i, tmdb_id in enumerate(tmdb_ids)}
+meta_por_id = {m["tmdb_id"]: m for m in model["metadata"]}
 
 env_path = Path(__file__).parent.parent / '.env'
 load_dotenv(dotenv_path=env_path)
@@ -187,7 +204,10 @@ def pesquisar_filme():
 
     termo_like = f"%{termo_pesquisa}%"
     filmes_encontrados = Filmes.query.filter(
-        Filmes.titulo.ilike(termo_like)).limit(20).all()
+        Filmes.titulo.ilike(termo_like)
+        ).order_by(
+            Filmes.qtd_votos.desc()
+        ).limit(20).all()
 
     if not filmes_encontrados:
         return jsonify([])
@@ -286,7 +306,7 @@ def remover_favorito(tmdb_id):
                         "message": "Filme não encontrado"}), 404
 
     favorito = Favoritos.query.filter_by(
-        id_usuario=id_usuario_atual, 
+        id_usuario=id_usuario_atual,
         id_filme=filme.id
     ).first()
 
@@ -300,6 +320,100 @@ def remover_favorito(tmdb_id):
 
     return jsonify({"success": True,
                     "message": "Filme removido dos favoritos com sucesso"})
+
+
+@app.route('/recomendar/multiplos', methods=['POST'])
+@jwt_required()
+def recomendar_multiplos():
+    try:
+        data = request.get_json()
+        lista_tmdb_ids = data.get('lista_tmdb_ids')
+
+        if not lista_tmdb_ids:
+            return jsonify(
+                {"success": False,
+                 "message": "Nenhum filme fornecido"}), 400
+
+        if embeddings is None or indices_map is None:
+            return jsonify({
+                "success": False,
+                "message": "Modelos de recomendação não carregados."}), 500
+
+        indice_filmes = [
+            indices_map[tmdb_id] for tmdb_id in lista_tmdb_ids
+            if tmdb_id in indices_map
+        ]
+
+        if not indice_filmes:
+            return jsonify({
+                "success": False,
+                "message": "Nenhum dos filmes foi encontrado no modelo"}), 404
+
+        score_similaridade = defaultdict(float)
+
+        for idx in indice_filmes:
+            vetor_filme = embeddings[idx].reshape(1, -1)
+            simi_cossenos = cosine_similarity(
+                vetor_filme, embeddings).flatten()
+            for sim_idx, score in enumerate(simi_cossenos):
+                if sim_idx not in indice_filmes:
+                    score_similaridade[sim_idx] += score
+
+        alpha = 0.75  # similaridade
+        beta = 0.25  # popularidade
+
+        for sim_idx in list(score_similaridade.keys()):
+            tmdb_id = tmdb_ids[sim_idx]
+            meta = meta_por_id.get(tmdb_id, {"media_votos": 5})
+            popularidade = meta["media_votos"] / 10  # normaliza 0–1
+            score_similaridade[sim_idx] = (
+                alpha * score_similaridade[sim_idx] + beta * popularidade
+            )
+
+        indices_ordenados = sorted(
+            score_similaridade.items(),
+            key=lambda item: item[1],
+            reverse=True
+        )
+
+        idx_mais_relevantes = [idx for idx, score in indices_ordenados[:10]]
+
+        if not idx_mais_relevantes:
+            return jsonify(
+             {"success": False,
+              "message": "Não foi possível gerar recomendações"}), 404
+
+        tmdb_ids_np = [tmdb_ids[idx] for idx in idx_mais_relevantes]
+        tmdb_ids_recomendados = [int(id) for id in tmdb_ids_np]
+
+        filmes_recomendados = Filmes.query.filter(
+            Filmes.tmdb_id.in_(tmdb_ids_recomendados)).all()
+
+        mapa_filmes = {filme.tmdb_id: filme for filme in filmes_recomendados}
+        filmes_ordenados = [
+            mapa_filmes[tmdb_id] for tmdb_id in tmdb_ids_recomendados
+            if tmdb_id in mapa_filmes
+        ]
+
+        resultados_json = [
+            {
+                'tmdb_id': filme.tmdb_id,
+                'titulo': filme.titulo,
+                'sinopse': filme.sinopse,
+                'generos': filme.generos,
+                'media_votos': filme.media_votos,
+                'qtd_votos': filme.qtd_votos,
+                'poster_path': filme.poster_path
+            } for filme in filmes_ordenados
+        ]
+        return jsonify(resultados_json)
+
+    except Exception as e:
+        app.logger.error("Erro na rota recomendar/multiplos: ", exc_info=True)
+        return jsonify(
+            {"success": False,
+             "message": f"Erro interno do servidor: {str(e)}"}, 500
+        )
 
 
 # Inicialização do bloco de código main()
