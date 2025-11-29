@@ -69,19 +69,27 @@ $ docker-compose up
 ```
 _Após iniciar, use a URL: http://localhost:8501 no seu navegador_
 
-### Treinamento do Modelo de Recomendaçao (ML)
+## Modelo de Recomendaçao (ML)
 
-A aplicação utiliza dois modelos de machine learning (.pkl) para gerar recomendações.
-O repositório já contém dois arquivos pré-treinados, permitindo que a aplicação funcione imediatamente. Caso deseje treinar os modelos, será necessário python instalado;
+A aplicação utiliza dois modelos pré-treinados (`.pkl`) para gerar as recomendações:
+1. **SVD (Collaborative Filtering):** Para descobertas baseadas em padrões de usuários.
+2. **Transformer NLP (Content-Based):** Para similaridade de conteúdo (sinopse, gêneros, etc).
+
+O repositório já inclui esses arquivos treinados com o dataset do **MovieLens**, garantindo que a aplicação funcione imediatamente sem necessidade de retreino.
+
+### Como treinar (opcional)
+Caso deseje atualizar os modelos ou testar com seus próprios dados:
 ```
 $ cd ml_scripts
+# Windows
 $ python -m venv venv
 $ "venv\scripts\activate"
-$ pip install requirements.txt
+$ pip install -r requirements.txt
 ```
+Por fim, execute os notebooks .ipynb (Jupyter) para gerar novos arquivos (`.pkl`), e cole esses arquivos em ``\backend``.
 
-Abra os arquivos .ipynb e modifique o que quiser para o treinamento.
-As configurações para treinamento são com dados locais do seu BD, é importante ficar sabendo que, caso você altere seu BD com novos dados (exemplo; criou a tabela "usuarios" de novo), o modelo será treinado referenciando IDS que agora pertencem a usuários diferentes, sendo necessário um novo treinamento. Ou então, # comentando as configurações de dados locais.
+## Aviso importante sobre dados locais
+Os modelos incluídos no repositório foram treinados apenas com dados públicos (MovieLens) para evitar conflitos de IDs. Se treinar o modelo com os notebooks .ipynb, ele aprenderá de acordo com gostos do banco de dados LOCAL, se houver alguma alteração no seu banco de dados, ou compartilhar, os IDS do novo BD herdarão os gostos de **SEUS** IDS antigos. Gerando recomendações incorretas, mantenha o treino híbrido (movielens + local) apenas para SEU uso pessoal.
 
 
 ### Endpoints da API
