@@ -73,11 +73,12 @@ _Após iniciar, use a URL: http://localhost:8501 no seu navegador_
 
 A aplicação utiliza dois modelos de machine learning (.pkl) para gerar recomendações.
 O repositório já contém dois arquivos pré-treinados, permitindo que a aplicação funcione imediatamente. Caso deseje treinar os modelos, será necessário python instalado;
-
+```
 $ cd ml_scripts
 $ python -m venv venv
 $ "venv\scripts\activate"
 $ pip install requirements.txt
+```
 
 Abra os arquivos .ipynb e modifique o que quiser para o treinamento.
 As configurações para treinamento são com dados locais do seu BD, é importante ficar sabendo que, caso você altere seu BD com novos dados (exemplo; criou a tabela "usuarios" de novo), o modelo será treinado referenciando IDS que agora pertencem a usuários diferentes, sendo necessário um novo treinamento. Ou então, # comentando as configurações de dados locais.
