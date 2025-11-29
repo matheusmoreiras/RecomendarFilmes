@@ -1,26 +1,14 @@
 import streamlit as st
-import requests
 from utils.utils import (
     validar_email,
     setup_page,
     load_css,
     setup_header,
-    API_URL
+    api_request
 )
 
 setup_page(titulo="Esqueci minha senha", hide_sidebar=True)
 load_css(["styles/geral.css", "styles/components.css"])
-
-
-def solicitar_reset(email: str):
-    try:
-        response = requests.post(f"{API_URL}/reset_senha",
-                                 json={"email": email}, timeout=10)
-        return response.status_code, response.json()
-    except requests.exceptions.RequestException as e:
-        return 500, {"success": False, "message": f"Erro de conexão: {e}"}
-
-
 setup_header("Recupere sua senha",
              "Informe seu email para recuperação")
 
@@ -32,12 +20,14 @@ with st.form("reset_form"):
         if not email or not validar_email(email):
             st.error("Digite um email válido!")
         else:
-            status, resp = solicitar_reset(email)
-            if status == 200 and resp.get("success"):
-                st.success("Se este email estiver cadastrado, enviaremos"
-                           " instruções de redefinição.")
-            else:
-                st.error(f"Erro: {resp.get('message','Falha ao solicitar redefinição')}")
+            resp = api_request("POST", "reset_senha", json={"email": email})
+            if resp:
+                if resp.get("success"):
+                    st.success("Se este email estiver cadastrado, enviaremos"
+                               " instruções de redefinição.")
+                else:
+                    st.error(
+                        f"Erro: {resp.get('message', 'Falha na redefinição')}")
 
 if st.button("Voltar para Login", width='stretch'):
     st.switch_page("app.py")

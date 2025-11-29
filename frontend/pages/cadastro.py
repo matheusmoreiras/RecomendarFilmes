@@ -1,12 +1,11 @@
 import streamlit as st
-import requests
 from utils.utils import (
     validar_senha,
     validar_email,
     setup_page,
     load_css,
     setup_header,
-    API_URL
+    api_request
 )
 
 setup_page(titulo="Cadastro", hide_sidebar=True)
@@ -15,12 +14,8 @@ load_css(["styles/geral.css", "styles/components.css"])
 
 # Função para cadastrar o usuário na API
 def cadastrar_usuario(user_data):
-    try:
-        response = requests.post(f"{API_URL}/cadastro",
-                                 json=user_data, timeout=10)
-        return response.status_code, response.json()
-    except requests.exceptions.RequestException as e:
-        return 500, {"success": False, "message": f"Erro de conexão: {e}"}
+    return api_request(
+        "POST", "cadastro", json=user_data, ignore_status=[401, 409])
 
 
 def main():
@@ -159,30 +154,18 @@ def main():
                             "generos_fav": generos_selecao
                         }
 
-                        status_code, response = cadastrar_usuario(payload)
+                        response = cadastrar_usuario(payload)
 
-                        if status_code == 200 and response.get("success"):
-                            st.session_state["novo_usuario"] = user
-                            st.success("Conta criada com sucesso!")
-                            st.switch_page("pages/sucesso.py")
-
-                        else:
-                            error_msg = response.get(
-                                "message", "Erro desconhecido")
-                            if status_code == 409:
-                                st.error(
-                                    "###### Nome de usuário já existe!\n\n"
-                                    "Tente outro nome de usuário."
-                                )
-                            elif status_code == 401:
-                                st.error(
-                                    "###### Email já cadastrado!\n\n"
-                                    "Use outro email ou faça login."
-                                )
+                        if response:
+                            if response.get("success"):
+                                st.session_state["novo_usuario"] = user
+                                st.success("Conta criada com sucesso!")
+                                st.switch_page("pages/sucesso.py")
                             else:
-                                st.error(
-                                    f"###### Erro ao criar conta:\n{error_msg}"
-                                    )
+                                msg = response.get(
+                                    "message", "Erro ao cadastrar")
+                                # Exibimos a mensagem formatada
+                                st.error(f"###### Atenção:\n\n{msg}")
 
     # Seção de ajuda
     with st.expander("💡 Precisa de ajuda?"):

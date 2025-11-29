@@ -1,18 +1,16 @@
 import streamlit as st
-import requests
 from time import sleep
 from utils.utils import (
     validar_senha,
     setup_page,
     load_css,
-    API_URL,
-    setup_header
+    setup_header,
+    api_request
 )
 
 setup_page(titulo="Redefinição de senha", hide_sidebar=True)
 load_css(["styles/geral.css", "styles/components.css"])
-
-token = st.query_params.get("token")  # Pega o token da URL
+token = st.query_params.get("token")
 
 # Verifica o token
 if not token:
@@ -48,20 +46,11 @@ else:
                 st.error("As senhas não coincidem.")
             else:
                 payload = {"token": token, "new_pw": nova_senha}
-                try:
-                    with st.spinner("Atualizando sua senha..."):
-                        resp = requests.post(f"{API_URL}/redefinir",
-                                             json=payload)
+                with st.spinner("Atualizando sua senha..."):
+                    resp = api_request("POST", "redefinir", json=payload)
 
-                    if resp.status_code == 200:
-                        st.success("Senha redefinida com sucesso! ✅")
-                        st.info("Você já pode fazer login com sua nova senha.")
-                        sleep(4)
-                        st.switch_page("app.py")
-                    else:
-                        error_message = resp.json().get("message",
-                                                        "Erro desconhecido.")
-                        st.error(error_message)
-
-                except requests.RequestException as e:
-                    st.error(f"Erro de conexão com o servidor: {e}")
+                if resp:
+                    st.success("Senha redefinida com sucesso! ✅")
+                    st.info("Você já pode fazer login com sua nova senha.")
+                    sleep(4)
+                    st.switch_page("app.py")

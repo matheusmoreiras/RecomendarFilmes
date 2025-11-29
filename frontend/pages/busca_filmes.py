@@ -1,5 +1,4 @@
 import streamlit as st
-import requests
 from utils.utils import (
     setup_page,
     load_css,
@@ -8,11 +7,12 @@ from utils.utils import (
     add_list_recomendar,
     setup_header,
     grid_filme,
-    API_URL
+    api_request
 )
 
 setup_page(titulo="Rotacine", layout="wide", protegida=True)
-load_css(['styles/geral.css', 'styles/components.css', 'styles/badges.css'])
+load_css(['styles/geral.css', 'styles/components.css', 'styles/badges.css',
+          'styles/sidebar.css'])
 setup_header("RotaCine", "Descubra filmes com Aprendizado de Máquina!", "🎬 ")
 
 
@@ -62,30 +62,29 @@ with col_filtro:
         label_visibility='collapsed'
     )
 
-st.divider()
-
 # Busca
 if buscar or (termo_pesquisa and len(termo_pesquisa) > 2):
     if termo_pesquisa.strip():
-        try:
-            with st.spinner('Buscando filmes...'):
-                url = f"{API_URL}/filmes/pesquisar"
-                response = requests.get(url, params={'q': termo_pesquisa},
-                                        timeout=10, headers=headers)
-                response.raise_for_status()
-                resultados = response.json()
+        with st.spinner('Buscando filmes...'):
+            resultados = api_request(
+                'GET',
+                'filmes/pesquisar',
+                params={'q': termo_pesquisa},
+                headers=headers
+            )
 
-            # Filtro por nota
+        if resultados is not None:
             if nota_minima > 0:
-                resultados = [f for f in resultados if f.get('media_votos', 0) >= nota_minima]
+                resultados = [f for f in resultados
+                              if f.get('media_votos', 0) >= nota_minima]
 
             if resultados:
                 st.markdown(
                     f'<div class="result-count">{len(resultados)} filme(s) encontrado(s) para "{termo_pesquisa}"</div>',
                     unsafe_allow_html=True
                 )
-
-                grid_filme(resultados, 4, fav_recomendar_button)
+                grid_filme(resultados, 4, fav_recomendar_button,
+                           contexto='busca')
 
             else:
                 st.warning(
@@ -93,13 +92,6 @@ if buscar or (termo_pesquisa and len(termo_pesquisa) > 2):
                 st.info("**Dicas:**\n- Verifique a ortografia"
                         "\n- Tente palavras-chave diferentes"
                         "\n- Reduza a nota mínima no filtro")
-
-        except requests.Timeout:
-            st.error("Tempo limite excedido. Tente novamente.")
-        except requests.RequestException as e:
-            st.error(f"Erro ao comunicar com a API: {e}")
-        except Exception as e:
-            st.error(f"Erro inesperado: {e}")
     else:
         st.warning("Por favor, digite o nome de um filme para pesquisar.")
 else:
