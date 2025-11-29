@@ -24,6 +24,7 @@ backend/backfill.py
 indices_mapeamento.pkl
 tfidf_matrix.pkl
 tfidf_vectorizer.pkl
+mmodelo_colaborativo.pkl
 
 
 #testes
