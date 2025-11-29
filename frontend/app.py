@@ -55,7 +55,7 @@ def main():
                     else:
                         with st.spinner("Autenticando..."):
                             resultado = check_login(username, password)
-
+                    if resultado:
                         if resultado.get("success"):
                             st.session_state["access_token"] = resultado.get(
                                 'access_token')

@@ -4,7 +4,7 @@ import os
 from time import sleep
 from typing import List
 import requests
-from requests.exceptions import HTTPError, Timeout, RequestException
+from requests.exceptions import HTTPError, Timeout, RequestException, ConnectionError
 
 API_URL = os.environ.get("API_URL", "http://127.0.0.1:5000")
 IMAGEM_URL = "https://image.tmdb.org/t/p/w500"
@@ -97,7 +97,9 @@ def api_request(method, endpoint, ignore_status=None, **kwargs):
             return response.json()
         response.raise_for_status()
         return response.json()
-
+    except ConnectionError:
+        st.error("Verifique se o Backend está rodando.")
+        return None
     except Timeout:
         st.error("O tempo limite da conexão expirou. Tente novamente.")
     except HTTPError as e:
