@@ -57,17 +57,26 @@ app.config['JWT_ACCESS_TOKEN_EXPIRES'] = timedelta(hours=2)
 jwt = JWTManager(app)
 
 with app.app_context():
-    sql_users = text("""SELECT DISTINCT id_usuario
-                    FROM avaliacoes
-                    UNION SELECT DISTINCT id_usuario FROM favoritos""")
-    all_users_ids = [row[0] for row in db.session.execute(
-        sql_users).fetchall()]
+    try:
+        sql_users = text("""
+            SELECT DISTINCT id_usuario FROM avaliacoes
+            UNION
+            SELECT DISTINCT id_usuario FROM favoritos
+        """)
+        all_users_ids = [row[0] for row in db.session.execute(
+            sql_users).fetchall()]
 
-    count = 0
-    for uid in all_users_ids:
-        if calcular_vetor_usuario(
-         uid, db.session, embeddings, indices_map) is not None:
-            count += 1
+        count = 0
+        for uid in all_users_ids:
+            if calcular_vetor_usuario(
+             uid, db.session, embeddings, indices_map) is not None:
+                count += 1
+        print(f"--- Cache pronto: {count} usuários processados ---")
+
+    except Exception as e:
+        print(f"provavel tabela nao criada {e}")
+        print("segunda execução não há erro")
+        pass
 
 
 @app.route('/login', methods=['POST'])
