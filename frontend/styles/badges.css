@@ -1,46 +1,35 @@
 .genero-badge {
     display: inline-block;
-    padding: 3px 9px;
-    border-radius: 15px;
-    font-size: 0.8rem;
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-    color: white;
+    padding: 4px 12px;
+    border-radius: var(--radius-pill);
+    font-size: 0.75rem;
     font-weight: 600;
+    background-color: var(--cor-destaque-claro);
+    color: var(--cor-destaque);
 }
-.genero-badge:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 6px 16px rgba(102,126,234,0.4);
-}
-/* votos */
 .votos-badge {
     display: inline-flex;
     align-items: center;
-    padding: 8px 16px;
-    border-radius: 25px;
-    font-size: 1.1rem;
-    margin: 10px 0;
+    padding: 6px 14px;
+    border-radius: var(--radius-pill);
+    font-size: 0.9rem;
     font-weight: 700;
-    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
-    transition: all 0.3s ease;
-}
-.votos-badge:hover {
-    transform: scale(1.05);
 }
 .nota-alta {
-    background: linear-gradient(135deg, #FFD700 0%, #FFA500 100%);
-    color: #000;
+    background-color: #fceeba;
+    color: #B45309; 
 }
 .nota-media {
-    background: linear-gradient(135deg, #4CAF50 0%, #8BC34A 100%);
-    color: white;
+    background-color: #F0FDF4;
+    color: #15803D;
 }
 .nota-baixa {
-    background: linear-gradient(135deg, #FF5722 0%, #F44336 100%);
-    color: white;
+    background-color: #f7bcae;
+    color: #C2410C;
 }
 .vote-count {
-        font-size: 0.85rem;
-        color: #888;
-        margin-left: 8px;
-        font-style: italic;
+    font-size: 0.8rem;
+    color: #666;
+    margin-left: 8px;
+    font-weight: 400;
 }

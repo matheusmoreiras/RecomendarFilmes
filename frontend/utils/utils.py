@@ -4,6 +4,7 @@ import os
 from time import sleep
 from typing import List
 import requests
+from requests.exceptions import HTTPError, Timeout, RequestException
 
 API_URL = os.environ.get("API_URL", "http://127.0.0.1:5000")
 IMAGEM_URL = "https://image.tmdb.org/t/p/w500"
@@ -28,9 +29,42 @@ def is_logged_in():
     return st.session_state.get('access_token') not in [None, ""]
 
 
-# Retorna autorização de caso tenha token
+def atualizar_mapa_avaliacoes():
+    """
+    Busca todas as avaliações do usuario e transforma em um dict
+    para o session_state: {tmdb_id (int): nota (int)}
+    """
+    if not is_logged_in():
+        return
+
+    token = st.session_state.get('access_token')
+    headers = {'Authorization': f'Bearer {token}'}
+
+    try:
+        response = requests.get(f"{API_URL}/usuario/minhas-avaliacoes",
+                                headers=headers)
+
+        if response.status_code == 200:
+            dados = response.json()
+
+            if isinstance(dados, list):
+                st.session_state['mapa_avaliacoes'] = {
+                    item['tmdb_id']: item['nota_pessoal'] for item in dados
+                }
+            else:
+                st.session_state['mapa_avaliacoes'] = {}
+        else:
+            st.session_state['mapa_avaliacoes'] = {}
+
+    except Exception as e:
+        print(f"Erro ao atualizar mapa: {e}")
+        st.session_state['mapa_avaliacoes'] = {}
+
+
 def get_auth():
     if is_logged_in():
+        if 'mapa_avaliacoes' not in st.session_state:
+            atualizar_mapa_avaliacoes()
         token = st.session_state.get('access_token')
         if token:
             return {'Authorization': f'Bearer {token}'}
@@ -38,14 +72,47 @@ def get_auth():
 
 
 def logout():
-    keys_to_clear = ['access_token', 'username', 'list_recomendacao']
-    for key in keys_to_clear:
-        if key in st.session_state:
-            del st.session_state[key]
+    st.session_state.clear()
     st.switch_page("app.py")
 
 
-# Configuração páginas Streamlit
+def api_request(method, endpoint, ignore_status=None, **kwargs):
+    """
+    Padronização para chamadas da API
+    Args:
+        method: metodo http ex: 'GET'
+        endpoint: final da URL, ex: "favoritos"(não precisa do "/" inicial)
+        **kwargs: Argumentos extras do requests (headers, json, params, etc)
+    Returns:
+        JSON response data ou None em caso de erro.
+    """
+
+    url = f"{API_URL}/{endpoint}"
+    if ignore_status is None:
+        ignore_status = []
+    timeout = kwargs.pop('timeout', 10)
+    try:
+        response = requests.request(method, url, timeout=timeout, **kwargs)
+        if response.status_code in ignore_status:
+            return response.json()
+        response.raise_for_status()
+        return response.json()
+
+    except Timeout:
+        st.error("O tempo limite da conexão expirou. Tente novamente.")
+    except HTTPError as e:
+        if e.response.status_code == 404:
+            st.error("Recurso não encontrado (404).")
+        elif e.response.status_code == 401:
+            st.error("Sessão expirada ou não autorizada.")
+        else:
+            st.error(f"Erro na requisição ({e.response.status_code}): {e}")
+    except RequestException as e:
+        st.error(f"Erro de conexão: {e}")
+    except Exception as e:
+        st.error(f"Erro inesperado: {e}")
+
+
 def setup_page(titulo: str, layout: str = "centered",
                protegida: bool = False, hide_sidebar: bool = False):
     """
@@ -53,7 +120,7 @@ def setup_page(titulo: str, layout: str = "centered",
         titulo: titulo da pagina
         layout: centered ou wide
         protegida: se true, precisa estar logado para ver a página
-        hide_sidebar: se true, a barra será escondida
+        hide_sidebar: se true, a barra lateral será escondida
     """
     st.set_page_config(
         page_title=titulo,
@@ -87,8 +154,10 @@ def setup_page(titulo: str, layout: str = "centered",
         st.sidebar.header("Menu de navegação")
 
         st.sidebar.page_link("pages/busca_filmes.py", label="Buscar filmes")
-        st.sidebar.page_link("pages/favoritos.py", label="Meus Favoritos")
+        st.sidebar.page_link("pages/para_voce.py", label="Para você")
         st.sidebar.page_link("pages/recomendador.py", label="Recomendador")
+        st.sidebar.page_link("pages/favoritos.py", label="Meus Favoritos")
+        st.sidebar.page_link("pages/avaliacoes.py", label="Avaliações")
 
         st.sidebar.divider()
 
@@ -105,7 +174,7 @@ def load_css(file_paths: List[str]):
     full_css = ""
     for file_path in file_paths:
         try:
-            with open(file_path) as f:
+            with open(file_path, 'r', encoding='utf-8') as f:
                 full_css += f.read()
         except FileNotFoundError:
             st.error(f"Arquivo CSS não encontrado em: {file_path}")
@@ -142,36 +211,21 @@ def add_favorito(tmdb_id):
 
 
 def carregar_favoritos():
-    url = f"{API_URL}/favoritos"
     headers = get_auth()
-    try:
-        response = requests.get(url, headers=headers, timeout=10)
-        response.raise_for_status()
-        return response.json()
-    except requests.RequestException as e:
-        st.error(f"Não foi possível carregar seus favoritos: {e}")
-        return None
+    return api_request('GET', 'favoritos', headers=headers)
 
 
 def remover_favorito(tmdb_id):
-    """
-    Args:
-        tmdb_id = id do filme
-    """
-    url = f"{API_URL}/favoritos/{tmdb_id}"
+    endpoint = f"favoritos/{tmdb_id}"
     headers = get_auth()
-    try:
-        response = requests.delete(url, headers=headers, timeout=10)
-        response.raise_for_status()
-        data = response.json()
-        if data.get("success"):
-            st.toast("Filme removido com sucesso!")
-            sleep(1)
-            st.rerun()
-        else:
-            st.toast(f"{data.get('message')}")
-    except requests.RequestException as e:
-        st.error(f"Erro ao remover o filme: {e}")
+    dados = api_request("DELETE", endpoint, headers=headers)
+
+    if dados.get("success"):
+        st.toast("Filme removido com sucesso!")
+        sleep(1)
+        st.rerun()
+    else:
+        st.toast(dados.get('message', 'Erro desconhecido ao remover.'))
 
 
 def get_list_recomendar():
@@ -193,8 +247,7 @@ def add_list_recomendar(filme: dict):
 
 
 def remove_list_recomendar(tmdb_id: int):
-    """Remove um filme
-    a partir da página do recomendador, onde recupera tmdb_id.
+    """Remove um filme da lista de recomendação onde recupera tmdb_id.
     """
     lista = get_list_recomendar()
     remover_filme = next((f for f in lista if f['tmdb_id'] == tmdb_id), None)
@@ -208,7 +261,49 @@ def limpar_lista_recomendacao():
     st.session_state['list_recomendacao'] = []
 
 
-def card_filme(filme):
+def callback_remover_avaliacao(tmdb_id, key_star):
+    """
+    Função executada ANTES da interface renderizar quando clica na lixeira.
+    """
+    if deletar_avaliacao_api(tmdb_id):
+        mapa = st.session_state.get('mapa_avaliacoes', {})
+
+        if str(tmdb_id) in mapa:
+            del st.session_state['mapa_avaliacoes'][str(tmdb_id)]
+        elif tmdb_id in mapa:
+            del st.session_state['mapa_avaliacoes'][tmdb_id]
+
+        if key_star in st.session_state:
+            del st.session_state[key_star]
+
+        st.session_state['_msg_remocao'] = "Avaliação removida."
+    else:
+        st.session_state['_msg_erro'] = "Erro ao remover avaliação."
+
+
+def deletar_avaliacao_api(tmdb_id):
+    headers = get_auth()
+    if headers:
+        try:
+            response = requests.delete(
+                f"{API_URL}/avaliar/{tmdb_id}",
+                headers=headers,
+                timeout=5
+            )
+            return response.status_code == 200
+        except:
+            return False
+    return False
+
+
+def card_filme(filme, contexto='geral'):
+    """
+    Gera o card do filme
+    Args:
+        filme: filme que será renderizado
+        contexto: memória do st.session para não confundir entre as pág
+        ex: contexto='busca' se estiver na pagina de busca de filmes
+    """
     if filme.get("poster_path"):
         st.image(
             f"{IMAGEM_URL}{filme['poster_path']}",
@@ -238,6 +333,65 @@ def card_filme(filme):
         unsafe_allow_html=True
     )
 
+    st.write("**Sua avaliação:**")
+
+    tmdb_id = filme.get('tmdb_id')
+    key_star = f"star_{contexto}_{tmdb_id}"
+
+    mapa = st.session_state.get('mapa_avaliacoes', {})
+    if isinstance(mapa, list):
+        mapa = {}
+
+    nota_salva = mapa.get(str(tmdb_id)) or mapa.get(tmdb_id)
+
+    # inicia as estrelinhas com cor se tiver nota salva
+    if nota_salva is not None:
+        if key_star not in st.session_state or st.session_state[key_star] is None:
+            st.session_state[key_star] = int(nota_salva) - 1
+
+    if nota_salva is not None:
+        c1, c2 = st.columns([5, 1])
+    else:
+        c1, c2 = st.columns([1, 0.01])
+
+    with c1:
+        nota_selecionada = st.feedback("stars", key=key_star)
+
+        if nota_selecionada is not None:
+            nota_real = nota_selecionada + 1
+            nota_atual_mapa = mapa.get(str(tmdb_id)) or mapa.get(tmdb_id)
+
+            if nota_atual_mapa != nota_real:
+                headers = get_auth()
+                if headers:
+                    try:
+                        payload = {'tmdb_id': tmdb_id, 'nota': nota_real}
+                        res = requests.post(f"{API_URL}/avaliar",
+                                            json=payload, headers=headers)
+
+                        if res.status_code == 200:
+                            st.toast(f"Nota {nota_real} salva!", icon="⭐")
+                            if 'mapa_avaliacoes' not in st.session_state:
+                                st.session_state['mapa_avaliacoes'] = {}
+                            st.session_state['mapa_avaliacoes'][
+                                str(tmdb_id)] = nota_real
+                        else:
+                            st.error("Erro ao salvar.")
+                    except requests.RequestException:
+                        st.error("Erro de conexão.")
+                else:
+                    st.warning("Faça login.")
+
+    with c2:
+        if nota_salva is not None:
+            if st.button(
+                "🗑️",
+                key=f"del_star_{contexto}_{tmdb_id}",
+                help="Remover avaliação",
+            ):
+                callback_remover_avaliacao(tmdb_id, key_star)
+                st.rerun()
+
     with st.expander("Ver sinopse"):
         sinopse = filme.get('sinopse')
         if sinopse:
@@ -247,6 +401,12 @@ def card_filme(filme):
 
 
 def setup_header(titulo, subtitulo=None, emoji=""):
+    """
+    Args:
+        titulo: titulo da pagina
+        subtitulo: subtitulo, pode ser NONE
+        emoji: será adicionado a ESQUERDA do titulo, padrao vazio
+    """
     titulo_completo = f"{emoji}{titulo}" if emoji else titulo
     st.markdown(f'<h1 class="titulo">{titulo_completo}</h1>',
                 unsafe_allow_html=True)
@@ -263,12 +423,14 @@ def msg_lista_vazia(message, button="Buscar Filmes",
             st.switch_page(page)
 
 
-def grid_filme(lista_filme, colunas, button=None):
+def grid_filme(lista_filme, colunas, button=None, contexto='grid'):
     """
     Args:
     lista_filme: Dict dos filmes
     colunas: qtd de colunas do grid(ex: 4 ou 5)
     button: Função para renderizar botões do grid
+    contexto: memória do st.session para não confundir entre as pág
+        ex: contexto='busca' se estiver na pagina de busca de filmes
     """
     if not lista_filme:
         return
@@ -277,6 +439,14 @@ def grid_filme(lista_filme, colunas, button=None):
         col = cols[i % colunas]
         with col:
             with st.container(border=True):
+                motivo = filme.get('motivo')
+                if motivo:
+                    st.caption(motivo)
                 if button:
                     button(filme)
-                card_filme(filme)
+                card_filme(filme, contexto=contexto)
+
+
+def limpar_cache_recomendacao():
+    if 'resultados_lista' in st.session_state:
+        del st.session_state['resultados_lista']

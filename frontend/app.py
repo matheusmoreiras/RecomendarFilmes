@@ -1,11 +1,10 @@
 import streamlit as st
-import requests
 from utils.utils import (
     setup_page,
     load_css,
     is_logged_in,
     setup_header,
-    API_URL
+    api_request
 )
 
 # Configuração da página
@@ -16,28 +15,7 @@ load_css(["styles/components.css", "styles/geral.css"])
 # Checar o login
 def check_login(username, password):
     payload = {'username': username, "password": password}
-    try:
-        response = requests.post(f"{API_URL}/login", json=payload, timeout=15)
-        if response.status_code == 401:
-            return {"success": False,
-                    "message": "Senha ou usuário incorreto"}
-        if response.status_code == 200:
-            return response.json()
-        else:
-            return {"success": False,
-                    "message": f"Erro de conexão, cód:{response.status_code}"}
-    except requests.exceptions.ConnectionError:
-        return {"success": False,
-                "message": "ERRO: Verifique se o backend/API está ativo"}
-
-    except requests.exceptions.Timeout:
-        return {"success": False,
-                "message": "O servidor demorou muito para responder"}
-
-    except requests.exceptions.RequestException as e:
-        print(f"Erro inesperado de request: {e}")
-        return {"success": False,
-                "message": "Ocorreu um erro inesperado"}
+    return api_request('POST', 'login', json=payload, ignore_status=[401])
 
 
 def main():
@@ -69,23 +47,24 @@ def main():
                 )
 
                 st.markdown("<br>", unsafe_allow_html=True)
-                submitted = st.form_submit_button("ENTRAR", width='stretch')
+                submitted = st.form_submit_button("Entrar", width='stretch')
 
                 if submitted:
                     if not username or not password:
                         st.error(" Por favor, preencha todos os campos!")
                     else:
                         with st.spinner("Autenticando..."):
-                            login_result = check_login(username, password)
+                            resultado = check_login(username, password)
 
-                        if login_result.get("success"):
-                            st.session_state["access_token"] = login_result.get('access_token')
+                        if resultado.get("success"):
+                            st.session_state["access_token"] = resultado.get(
+                                'access_token')
                             st.session_state["username"] = username
                             st.success("Login realizado com sucesso!")
                             st.rerun()
                         else:
                             st.error(
-                                f"{login_result.get('message', 'Falha no login')}")
+                                f"{resultado.get('message', 'Falha login')}")
 
         st.divider()
         if st.button("Esqueci minha senha", width='stretch'):
