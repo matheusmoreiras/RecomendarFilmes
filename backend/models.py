@@ -1,4 +1,5 @@
 from database import db
+from datetime import datetime
 
 
 class Usuario(db.Model):
@@ -39,7 +40,7 @@ class Favoritos(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     id_usuario = db.Column(db.Integer, db.ForeignKey('usuarios.id'),
                            nullable=False)
-    id_filme = db.Column(db.Integer, db.ForeignKey('filmes.id'),
+    id_filme = db.Column(db.Integer, db.ForeignKey('filmes.tmdb_id'),
                          nullable=False)
 
     __table_args__ = (db.UniqueConstraint('id_usuario', 'id_filme',
@@ -47,3 +48,20 @@ class Favoritos(db.Model):
 
     def __repr__(self):
         return f'<Favorito usuario_id={self.id_usuario} filme_id={self.id_filme}>'
+
+
+class Avaliacao(db.Model):
+    __tablename__ = 'avaliacoes'
+    id = db.Column(db.Integer, primary_key=True)
+    id_usuario = db.Column(db.Integer, db.ForeignKey('usuarios.id'),
+                           nullable=False)
+    id_filme = db.Column(db.Integer, db.ForeignKey('filmes.tmdb_id'),
+                         nullable=False)
+    nota = db.Column(db.Integer, nullable=False)
+    data_avaliacao = db.Column(db.DateTime, default=datetime.utcnow)
+
+    __table_args__ = (db.UniqueConstraint('id_usuario', 'id_filme',
+                                          name='uq_usuario_avaliacao'),)
+
+    def __repr__(self):
+        return f'<Avaliacao usuario={self.id_usuario} Filme={self.id_filme} Nota={self.nota}>'
