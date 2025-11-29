@@ -553,7 +553,7 @@ def recomendar_colaborativo():
     def score_descoberta(item):
         nota = item['nota_svd']
         pop = item['popularidade'] if item['popularidade'] > 1 else 1
-        penalidade = 0.1 * math.log10(pop)
+        penalidade = 0.2 * math.log10(pop)
 
         return nota - penalidade
     try:
@@ -573,7 +573,7 @@ def recomendar_colaborativo():
                                    db.session, embeddings, indices_map)
 
         # cold start
-        if total_interacoes < 6 and total_interacoes > 0:
+        if total_interacoes < 12 and total_interacoes > 0:
             vizinhos = encontrar_vizinhos_cache(
                 id_usuario_atual,
                 db.session,
@@ -586,16 +586,15 @@ def recomendar_colaborativo():
                     vizinhos_tuple = (vizinhos_tuple[0],)
 
                 query = text("""
-                    SELECT id_filme
+                    SELECT id_filme, COUNT(id_usuario) as freq
                     FROM avaliacoes
                     WHERE id_usuario IN :vizinhos
                     AND nota >= 4
                     AND id_filme NOT IN (
-                    SELECT id_filme FROM avaliacoes WHERE id_usuario = :meuid
+                        SELECT id_filme FROM avaliacoes WHERE id_usuario = :meuid
                     )
                     GROUP BY id_filme
-                    HAVING COUNT(id_usuario) > 1
-                    ORDER BY COUNT(id_usuario) DESC, AVG(nota) DESC
+                    ORDER BY freq DESC, AVG(nota) DESC
                     LIMIT 10
                 """)
 
@@ -606,7 +605,7 @@ def recomendar_colaborativo():
                 origem_recomendacao = "Comunidade Similar (Cluster)"
 
         # svd - matriz
-        elif total_interacoes >= 6:
+        elif total_interacoes >= 13:
             if algo_svd:
                 avaliacoes = Avaliacao.query.filter_by(
                     id_usuario=id_usuario_atual).all()
