@@ -605,7 +605,7 @@ def recomendar_colaborativo():
                 origem_recomendacao = "Comunidade Similar (Cluster)"
 
         # svd - matriz
-        elif total_interacoes >= 13:
+        elif total_interacoes >= 12:
             if algo_svd:
                 avaliacoes = Avaliacao.query.filter_by(
                     id_usuario=id_usuario_atual).all()
