@@ -1,0 +1,31 @@
+
+/* 1. Estiliza o container DIV de CADA link */
+[data-testid="stSidebar"] [data-testid="stPageLink-NavLink"] {
+    display: block;
+    padding: 0.6rem 1rem;
+    border-radius: var(--radius-medium);
+    border: 1px solid transparent;
+}
+
+[data-testid="stSidebar"] [data-testid="stPageLink-NavLink"]:not([aria-current="page"]):hover {
+    background-color: rgba(0, 113, 227, 0.06) !important;
+    border-color: transparent !important;
+}
+
+[data-testid="stSidebar"] .stButton > button,
+[data-testid="stSidebar"] button[kind="primary"] {
+    background-color: #E04040 !important; 
+    border-color: #E04040 !important;
+    font-weight: 700;
+    font-size: 1rem;
+    border: none;
+    border-radius: var(--radius-pill);
+    padding: 0.75rem 1.75rem;
+    transition: all 0.2s ease;
+    box-shadow: var(--shadow-media);
+    cursor: pointer;
+}
+
+[data-testid="stSidebar"] button[kind="primary"]:hover {
+    box-shadow: 0 8px 20px rgba(255, 0, 0, 0.2);
+}
