@@ -35,7 +35,7 @@ embeddings = model['embeddings']
 tmdb_ids = model['tmdb_ids']
 indices_map = {tmdb_id: i for i, tmdb_id in enumerate(tmdb_ids)}
 meta_por_id = {m["tmdb_id"]: m for m in model["metadata"]}
-MODELO_COLAB_PATH = os.path.join(BASE_DIR, 'modelo_colaborativo.pkl')
+MODELO_COLAB_PATH = os.path.join(BASE_DIR, 'mmodelo_colaborativo.pkl')
 algo_svd = None
 dados_modelo = joblib.load(MODELO_COLAB_PATH)
 algo_svd = dados_modelo.get('model')
@@ -574,7 +574,12 @@ def recomendar_colaborativo():
 
         # cold start
         if total_interacoes < 6 and total_interacoes > 0:
-            vizinhos = encontrar_vizinhos_cache(id_usuario_atual, k=30)
+            vizinhos = encontrar_vizinhos_cache(
+                id_usuario_atual,
+                db.session,
+                embeddings,
+                indices_map,
+                k=30)
             if vizinhos:
                 vizinhos_tuple = tuple(vizinhos)
                 if len(vizinhos_tuple) == 1:
